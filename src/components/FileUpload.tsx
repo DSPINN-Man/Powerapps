@@ -21,6 +21,7 @@ export function FileUpload({
 }: FileUploadProps) {
   const [dragActive, setDragActive] = useState(false);
   const [internalFiles, setInternalFiles] = useState<File[]>([]);
+  const [validationMessage, setValidationMessage] = useState<string>("");
   const instanceId = useId();
   
   // Use controlled files if provided, otherwise use internal state
@@ -51,6 +52,7 @@ export function FileUpload({
   }, []);
 
   const handleFiles = useCallback((newFiles: File[]) => {
+    const rejected: string[] = [];
     const validFiles = newFiles.filter(file => {
       const extension = '.' + file.name.split('.').pop()?.toLowerCase();
       const isValidType = acceptedTypes.some(type => 
@@ -58,7 +60,11 @@ export function FileUpload({
         file.type.includes(type.replace('.', ''))
       );
       const isValidSize = file.size <= maxSize * 1024 * 1024;
-      return isValidType && isValidSize;
+      const ok = isValidType && isValidSize;
+      if (!ok) {
+        rejected.push(`${file.name}${!isValidType ? ' (type)' : ''}${!isValidSize ? ' (size)' : ''}`);
+      }
+      return ok;
     });
 
     let finalFiles: File[];
@@ -75,6 +81,12 @@ export function FileUpload({
     
     // Always call the callback to notify parent
     onFilesSelected(finalFiles);
+    // Set validation message
+    if (rejected.length > 0) {
+      setValidationMessage(`Some files were rejected: ${rejected.join(', ')}. Allowed types: ${acceptedTypes.join(', ')}. Max ${maxSize}MB.`);
+    } else {
+      setValidationMessage("");
+    }
   }, [acceptedTypes, maxSize, multiple, uploadedFiles, onFilesSelected, files]);
 
   const removeFile = useCallback((index: number) => {
@@ -183,6 +195,9 @@ export function FileUpload({
                 </div>
               ))}
             </div>
+            {validationMessage && (
+              <div className="mt-3 text-xs text-red-500">{validationMessage}</div>
+            )}
           </CardContent>
         </Card>
       )}

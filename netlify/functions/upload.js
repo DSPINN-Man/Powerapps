@@ -1,4 +1,5 @@
 const multiparty = require('multiparty');
+const multipart = require('aws-lambda-multipart-parser');
 const { promises: fs } = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
@@ -28,72 +29,60 @@ exports.handler = async (event, context) => {
     const uploadDir = path.join('/tmp', 'uploads');
     await fs.mkdir(uploadDir, { recursive: true });
 
-    // Parse multipart form data
-    const form = new multiparty.Form();
-    
-    return new Promise((resolve, reject) => {
-      form.parse(event.body, async (err, fields, files) => {
-        if (err) {
-          resolve({
-            statusCode: 400,
-            headers,
-            body: JSON.stringify({ error: 'Failed to parse form data' })
-          });
-          return;
-        }
+    // Parse multipart body in AWS/Netlify Lambda environment
+    const contentType = event.headers['content-type'] || event.headers['Content-Type'] || '';
+    if (!contentType.toLowerCase().startsWith('multipart/form-data')) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'Invalid content type. Expected multipart/form-data.' })
+      };
+    }
 
-        const file = files.file?.[0];
-        if (!file) {
-          resolve({
-            statusCode: 400,
-            headers,
-            body: JSON.stringify({ error: 'No file uploaded' })
-          });
-          return;
-        }
+    const parsed = multipart.parse(event, true); // parse buffers
+    const fileField = parsed.file || parsed.files || parsed.upload || null;
 
-        // Validate file type
-        const allowedTypes = ['.xlsx', '.xlsm', '.xls', '.csv'];
-        const fileExt = path.extname(file.originalFilename || '').toLowerCase();
-        
-        if (!allowedTypes.includes(fileExt)) {
-          resolve({
-            statusCode: 400,
-            headers,
-            body: JSON.stringify({ error: 'Invalid file type. Only Excel and CSV files are allowed.' })
-          });
-          return;
-        }
+    let fileObj = null;
+    if (Array.isArray(fileField)) {
+      fileObj = fileField[0];
+    } else if (fileField && fileField.content) {
+      fileObj = fileField;
+    }
 
-        try {
-          // Generate unique filename
-          const uniqueFilename = `${uuidv4()}_${file.originalFilename?.replace(/\s+/g, '_')}`;
-          const newPath = path.join(uploadDir, uniqueFilename);
-          
-          // Copy file to new location
-          await fs.copyFile(file.path, newPath);
+    if (!fileObj) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'No file uploaded' })
+      };
+    }
 
-          resolve({
-            statusCode: 200,
-            headers,
-            body: JSON.stringify({
-              message: 'File uploaded successfully',
-              filename: uniqueFilename,
-              originalName: file.originalFilename,
-              path: newPath,
-              size: file.size
-            })
-          });
-        } catch (error) {
-          console.error('File processing error:', error);
-          resolve({
-            statusCode: 500,
-            headers,
-            body: JSON.stringify({ error: 'File processing failed' })
-          });
-        }
-      });
-    });
+    const originalFilename = fileObj.filename || 'upload.xlsx';
+    const fileExt = path.extname(originalFilename).toLowerCase();
+    const allowedTypes = ['.xlsx', '.xlsm', '.xls', '.csv'];
+    if (!allowedTypes.includes(fileExt)) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'Invalid file type. Only Excel and CSV files are allowed.' })
+      };
+    }
+
+    const uniqueFilename = `${uuidv4()}_${originalFilename.replace(/\s+/g, '_')}`;
+    const newPath = path.join(uploadDir, uniqueFilename);
+    await fs.writeFile(newPath, fileObj.content);
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        message: 'File uploaded successfully',
+        filename: uniqueFilename,
+        originalName: originalFilename,
+        path: newPath,
+        size: fileObj.content.length
+      })
+    };
 
   } catch (error) {
     console.error('Upload error:', error);

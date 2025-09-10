@@ -311,7 +311,7 @@ export default function AutomatedWorkflow() {
                     </Label>
                     <FileUpload
                       acceptedTypes={['.xlsx', '.xlsm', '.xls']}
-                      maxSize={20}
+                      maxSize={100}
                       onFilesSelected={setLociFile}
                       multiple={false}
                       files={lociFile}
@@ -324,7 +324,7 @@ export default function AutomatedWorkflow() {
                     </Label>
                     <FileUpload
                       acceptedTypes={['.xlsx', '.xlsm', '.xls']}
-                      maxSize={20}
+                      maxSize={100}
                       onFilesSelected={setHarmonicsFile}
                       multiple={false}
                       files={harmonicsFile}
