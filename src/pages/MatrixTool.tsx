@@ -79,12 +79,13 @@ export default function MatrixTool() {
             <CardContent className="space-y-6">
               {/* File Upload */}
               <div>
-                <Label className="text-base font-medium mb-3 block">Impedance Data File</Label>
+                <Label className="text-base font-medium mb-3 block">Impedance Loci Data (.xlsx/.xlsm/.xls/.csv)</Label>
                 <FileUpload
                   acceptedTypes={['.xlsx', '.xlsm', '.xls', '.csv']}
                   maxSize={25}
                   onFilesSelected={setUploadedFiles}
                   multiple={false}
+                  files={uploadedFiles}
                 />
               </div>
 

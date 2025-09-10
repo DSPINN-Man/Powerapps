@@ -75,12 +75,13 @@ export default function LociTool() {
             <CardContent className="space-y-6">
               {/* File Upload */}
               <div>
-                <Label className="text-base font-medium mb-3 block">Impedance Loci Data</Label>
+                <Label className="text-base font-medium mb-3 block">Impedance Loci Data (.xlsx/.xlsm/.xls/.csv)</Label>
                 <FileUpload
                   acceptedTypes={['.xlsx', '.xlsm', '.xls', '.csv']}
                   maxSize={20}
                   onFilesSelected={setUploadedFiles}
                   multiple={false}
+                  files={uploadedFiles}
                 />
               </div>
 

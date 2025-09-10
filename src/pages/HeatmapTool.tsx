@@ -11,7 +11,8 @@ import { FileUpload } from "@/components/FileUpload";
 import { Separator } from "@/components/ui/separator";
 
 export default function HeatmapTool() {
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [harmonicFiles, setHarmonicFiles] = useState<File[]>([]);
+  const [lociFiles, setLociFiles] = useState<File[]>([]);
   const [processing, setProcessing] = useState(false);
   const [xColumn, setXColumn] = useState("");
   const [yColumn, setYColumn] = useState("");
@@ -89,8 +90,20 @@ export default function HeatmapTool() {
                 <FileUpload
                   acceptedTypes={['.xlsx', '.xlsm', '.xls', '.csv']}
                   maxSize={50}
-                  onFilesSelected={setUploadedFiles}
+                  onFilesSelected={setHarmonicFiles}
                   multiple={false}
+                  files={harmonicFiles}
+                />
+              </div>
+              
+              <div>
+                <Label className="text-base font-medium mb-3 block">Impedance Loci Data with Harmonic Limits (.xlsx/.xlsm/.xls/.csv)</Label>
+                <FileUpload
+                  acceptedTypes={['.xlsx', '.xlsm', '.xls', '.csv']}
+                  maxSize={50}
+                  onFilesSelected={setLociFiles}
+                  multiple={false}
+                  files={lociFiles}
                 />
               </div>
 
@@ -204,7 +217,7 @@ export default function HeatmapTool() {
             <CardContent>
               <Button 
                 onClick={handleProcessing}
-                disabled={uploadedFiles.length === 0 || !xColumn || !yColumn || !metricColumn || processing}
+                disabled={harmonicFiles.length === 0 || lociFiles.length === 0 || !xColumn || !yColumn || !metricColumn || processing}
                 className="w-full"
                 size="lg"
               >

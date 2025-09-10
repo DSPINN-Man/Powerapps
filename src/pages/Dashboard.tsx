@@ -87,7 +87,7 @@ const tools = [
     icon: BarChart3,
     color: "electric",
     features: ["Excel input support", "Multiple colormap options", "PNG/SVG export", "PowerFactory CSV output"],
-    inputs: ["Excel files (.xlsx/.xlsm/.xls)", "Column selection", "Resolution settings"],
+    inputs: ["Harmonic Calculation Results", "Impedance Loci Data", "Column selection", "Resolution settings"],
     outputs: ["Heatmap plots", "CSV matrices", "Interactive HTML"],
     path: "/heatmap"
   },
@@ -98,7 +98,7 @@ const tools = [
     icon: Shuffle,
     color: "success",
     features: ["Impedance data processing", "Matrix format conversion", "Visual preview", "PowerFactory compatibility"],
-    inputs: ["Excel files (.xlsx/.xlsm/.xls)", "Custom delimiters", "Sheet mapping"],
+    inputs: ["Impedance Loci Data (.xlsx/.xlsm/.xls)", "Custom delimiters", "Sheet mapping"],
     outputs: ["PowerFactory matrices", "CSV/TXT files", "Preview HTML"],
     path: "/matrix"
   },
@@ -109,7 +109,7 @@ const tools = [
     icon: RotateCw,  
     color: "warning",
     features: ["Clockwise reordering", "Data visualization", "Sequence optimization", "Multiple formats"],
-    inputs: ["Excel files (.xlsx/.xlsm/.xls)", "X/Y column selection", "Ordering options"],
+    inputs: ["Impedance Loci Data (.xlsx/.xlsm/.xls)", "X/Y column selection", "Ordering options"],
     outputs: ["Reordered loci files", "Excel/CSV export", "Sequence diagrams"],
     path: "/loci"
   }
