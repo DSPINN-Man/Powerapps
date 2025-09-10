@@ -20,6 +20,12 @@ const tools = [
     description: "Overview of all tools"
   },
   { 
+    title: "Automated Workflow", 
+    url: "/workflow", 
+    icon: Zap,
+    description: "Complete end-to-end processing automation"
+  },
+  { 
     title: "Heatmap Generator", 
     url: "/heatmap", 
     icon: BarChart3,

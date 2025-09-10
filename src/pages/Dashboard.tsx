@@ -5,13 +5,22 @@ import { Button } from "@/components/ui/button";
 
 const ToolCard = ({ tool }: { tool: typeof tools[0] }) => {
   return (
-    <Card className="minimal-card hover-lift transition-all duration-200 border">
+    <Card className={`minimal-card hover-lift transition-all duration-200 border ${
+      tool.featured ? 'ring-2 ring-primary/20 shadow-lg scale-105' : ''
+    }`}>
       <CardHeader className="pb-6">
         <div className="flex items-center gap-3 mb-4">
-          <div className="p-2.5 rounded-md bg-muted">
-            <tool.icon className="h-5 w-5 text-foreground" />
+          <div className={`p-2.5 rounded-md ${tool.featured ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+            <tool.icon className={`h-5 w-5 ${tool.featured ? 'text-white' : 'text-foreground'}`} />
           </div>
-          <CardTitle className="text-lg font-medium">{tool.title}</CardTitle>
+          <div className="flex-1">
+            <CardTitle className="text-lg font-medium">{tool.title}</CardTitle>
+            {tool.featured && (
+              <span className="inline-flex items-center px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium mt-1">
+                ⚡ NEW - Fully Automated
+              </span>
+            )}
+          </div>
         </div>
         <CardDescription className="text-muted-foreground leading-relaxed">
           {tool.description}
@@ -59,6 +68,18 @@ const ToolCard = ({ tool }: { tool: typeof tools[0] }) => {
 };
 
 const tools = [
+  {
+    id: "workflow",
+    title: "Automated Workflow",
+    description: "Complete end-to-end automation of your power systems analysis. Upload files, configure options, and let the system handle the entire processing pipeline.",
+    icon: Zap,
+    color: "primary",
+    features: ["Full automation", "Real-time progress", "Python integration", "Comprehensive results"],
+    inputs: ["Impedance loci data", "Harmonic calculations", "Configuration settings"],
+    outputs: ["DS Format matrices", "Analysis plots", "Compliance reports"],
+    path: "/workflow",
+    featured: true
+  },
   {
     id: "heatmap",
     title: "Heatmap Generator",
@@ -111,8 +132,8 @@ export default function Dashboard() {
 
       {/* Tools Grid */}
       <div className="px-8 pb-16">
-        <div className="max-w-5xl mx-auto">
-          <div className="grid md:grid-cols-3 gap-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
             {tools.map((tool) => (
               <ToolCard key={tool.title} tool={tool} />
             ))}

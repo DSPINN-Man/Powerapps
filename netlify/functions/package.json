@@ -1,0 +1,10 @@
+{
+  "name": "netlify-functions",
+  "version": "1.0.0",
+  "description": "Serverless functions for PowerApps Toolbox",
+  "dependencies": {
+    "multiparty": "^4.2.3",
+    "archiver": "^5.3.2",
+    "uuid": "^9.0.1"
+  }
+}

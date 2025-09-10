@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import HeatmapTool from "./pages/HeatmapTool";
 import MatrixTool from "./pages/MatrixTool";
 import LociTool from "./pages/LociTool";
+import AutomatedWorkflow from "./pages/AutomatedWorkflow";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
               <main className="flex-1 overflow-auto">
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
+                  <Route path="/workflow" element={<AutomatedWorkflow />} />
                   <Route path="/heatmap" element={<HeatmapTool />} />
                   <Route path="/matrix" element={<MatrixTool />} />
                   <Route path="/loci" element={<LociTool />} />
