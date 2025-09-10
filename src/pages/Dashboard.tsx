@@ -1,4 +1,4 @@
-import { BarChart3, Shuffle, RotateCw, ArrowRight } from "lucide-react";
+import { BarChart3, Shuffle, RotateCw, ArrowRight, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
