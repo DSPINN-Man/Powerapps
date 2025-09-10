@@ -119,66 +119,6 @@ export default function AutomatedWorkflow() {
     return data.filename;
   };
 
-  const processLociClockwise = async (filename: string): Promise<string> => {
-    const response = await fetch(`${API_BASE_URL}/process/loci-clockwise`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        filename,
-        sheetName
-      })
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.details || 'Loci clockwise processing failed');
-    }
-    
-    const data = await response.json();
-    return data.sessionId;
-  };
-
-  const processPowerFactoryFormat = async (sessionId: string): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/process/powerfunction-format`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        sessionId,
-        sheetName
-      })
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.details || 'PowerFactory format processing failed');
-    }
-  };
-
-  const generatePlots = async (sessionId: string, harmonicsFilename: string): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/process/generate-plots`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        sessionId,
-        excelFile: harmonicsFilename,
-        lociInputsFile: 'processed_loci.xlsx',
-        limitsSheetName,
-        lociUnit
-      })
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.details || 'Plot generation failed');
-    }
-  };
-
   const fetchResults = async (sessionId: string): Promise<ProcessingResults> => {
     const response = await fetch(`${API_BASE_URL}/results/${sessionId}`);
     if (!response.ok) {
