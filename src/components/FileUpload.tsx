@@ -9,16 +9,21 @@ interface FileUploadProps {
   maxSize?: number; // in MB
   onFilesSelected: (files: File[]) => void;
   multiple?: boolean;
+  files?: File[]; // Controlled files from parent
 }
 
 export function FileUpload({ 
   acceptedTypes = ['.xlsx', '.xlsm', '.xls', '.csv'],
   maxSize = 10,
   onFilesSelected,
-  multiple = false 
+  multiple = false,
+  files 
 }: FileUploadProps) {
   const [dragActive, setDragActive] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [internalFiles, setInternalFiles] = useState<File[]>([]);
+  
+  // Use controlled files if provided, otherwise use internal state
+  const uploadedFiles = files || internalFiles;
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -44,8 +49,8 @@ export function FileUpload({
     handleFiles(files);
   }, []);
 
-  const handleFiles = useCallback((files: File[]) => {
-    const validFiles = files.filter(file => {
+  const handleFiles = useCallback((newFiles: File[]) => {
+    const validFiles = newFiles.filter(file => {
       const extension = '.' + file.name.split('.').pop()?.toLowerCase();
       const isValidType = acceptedTypes.some(type => 
         type.toLowerCase() === extension || 
@@ -55,21 +60,33 @@ export function FileUpload({
       return isValidType && isValidSize;
     });
 
+    let finalFiles: File[];
     if (multiple) {
-      const newFiles = [...uploadedFiles, ...validFiles];
-      setUploadedFiles(newFiles);
-      onFilesSelected(newFiles);
+      finalFiles = [...uploadedFiles, ...validFiles];
     } else {
-      setUploadedFiles(validFiles.slice(0, 1));
-      onFilesSelected(validFiles.slice(0, 1));
+      finalFiles = validFiles.slice(0, 1);
     }
-  }, [acceptedTypes, maxSize, multiple, uploadedFiles, onFilesSelected]);
+
+    // Update internal state only if not controlled by parent
+    if (!files) {
+      setInternalFiles(finalFiles);
+    }
+    
+    // Always call the callback to notify parent
+    onFilesSelected(finalFiles);
+  }, [acceptedTypes, maxSize, multiple, uploadedFiles, onFilesSelected, files]);
 
   const removeFile = useCallback((index: number) => {
     const newFiles = uploadedFiles.filter((_, i) => i !== index);
-    setUploadedFiles(newFiles);
+    
+    // Update internal state only if not controlled by parent
+    if (!files) {
+      setInternalFiles(newFiles);
+    }
+    
+    // Always call the callback to notify parent
     onFilesSelected(newFiles);
-  }, [uploadedFiles, onFilesSelected]);
+  }, [uploadedFiles, onFilesSelected, files]);
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';

@@ -314,6 +314,7 @@ export default function AutomatedWorkflow() {
                       maxSize={20}
                       onFilesSelected={setLociFile}
                       multiple={false}
+                      files={lociFile}
                     />
                   </div>
                   
@@ -326,6 +327,7 @@ export default function AutomatedWorkflow() {
                       maxSize={20}
                       onFilesSelected={setHarmonicsFile}
                       multiple={false}
+                      files={harmonicsFile}
                     />
                   </div>
                 </CardContent>

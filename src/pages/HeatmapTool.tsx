@@ -85,7 +85,7 @@ export default function HeatmapTool() {
             <CardContent className="space-y-6">
               {/* File Upload */}
               <div>
-                <Label className="text-base font-medium mb-3 block">Data File</Label>
+                <Label className="text-base font-medium mb-3 block">Harmonic Calculation Results (.xlsx/.xlsm/.xls/.csv)</Label>
                 <FileUpload
                   acceptedTypes={['.xlsx', '.xlsm', '.xls', '.csv']}
                   maxSize={50}
