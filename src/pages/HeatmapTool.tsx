@@ -15,10 +15,7 @@ export default function HeatmapTool() {
   const [lociFiles, setLociFiles] = useState<File[]>([]);
   const [processing, setProcessing] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [xColumn, setXColumn] = useState("");
-  const [yColumn, setYColumn] = useState("");
-  const [metricColumn, setMetricColumn] = useState("");
-  const [colormap, setColormap] = useState("viridis");
+  // Simplified UI: remove column/colormap selection per requirement
   const [resolution, setResolution] = useState([300]);
   const [outputFormat, setOutputFormat] = useState("png");
 
@@ -33,24 +30,9 @@ export default function HeatmapTool() {
     return data.filename as string;
   };
 
-  const colormaps = [
-    { value: "viridis", label: "Viridis (Default)" },
-    { value: "plasma", label: "Plasma" },
-    { value: "inferno", label: "Inferno" },
-    { value: "magma", label: "Magma" },
-    { value: "coolwarm", label: "Cool Warm" },
-    { value: "seismic", label: "Seismic" },
-    { value: "jet", label: "Jet" }
-  ];
-
   const outputFormats = [
-    { value: "png", label: "PNG Image" },
-    { value: "svg", label: "SVG Vector" },
-    { value: "html", label: "Interactive HTML" }
+    { value: "png", label: "PNG Image" }
   ];
-
-  // Mock columns (in real app, these would come from file analysis)
-  const availableColumns = ["frequency", "voltage", "current", "harmonic_order", "thd", "impedance"];
 
   const handleProcessing = async () => {
     if (harmonicFiles.length === 0 || lociFiles.length === 0) return;
@@ -64,10 +46,6 @@ export default function HeatmapTool() {
         body: JSON.stringify({
           harmonicFile: harmonicFilename,
           lociFile: lociFilename,
-          xColumn,
-          yColumn,
-          metricColumn,
-          colormap,
           outputFormat,
           resolution: resolution[0]
         })
@@ -163,82 +141,19 @@ export default function HeatmapTool() {
 
               <Separator />
 
-              {/* Column Selection */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="x-column">X-Axis Column</Label>
-                  <Select value={xColumn} onValueChange={setXColumn}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select column" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableColumns.map(col => (
-                        <SelectItem key={col} value={col}>{col}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="y-column">Y-Axis Column</Label>
-                  <Select value={yColumn} onValueChange={setYColumn}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select column" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableColumns.map(col => (
-                        <SelectItem key={col} value={col}>{col}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="metric-column">Metric Column</Label>
-                  <Select value={metricColumn} onValueChange={setMetricColumn}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select column" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableColumns.map(col => (
-                        <SelectItem key={col} value={col}>{col}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Visualization Options */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="colormap">Color Map</Label>
-                  <Select value={colormap} onValueChange={setColormap}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {colormaps.map(cm => (
-                        <SelectItem key={cm.value} value={cm.value}>{cm.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="output-format">Output Format</Label>
-                  <Select value={outputFormat} onValueChange={setOutputFormat}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {outputFormats.map(fmt => (
-                        <SelectItem key={fmt.value} value={fmt.value}>{fmt.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              {/* Output Format */}
+              <div>
+                <Label htmlFor="output-format">Output Format</Label>
+                <Select value={outputFormat} onValueChange={setOutputFormat}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {outputFormats.map(fmt => (
+                      <SelectItem key={fmt.value} value={fmt.value}>{fmt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -271,7 +186,7 @@ export default function HeatmapTool() {
             <CardContent>
               <Button 
                 onClick={handleProcessing}
-                disabled={harmonicFiles.length === 0 || lociFiles.length === 0 || !xColumn || !yColumn || !metricColumn || processing}
+                disabled={harmonicFiles.length === 0 || lociFiles.length === 0 || processing}
                 className="w-full"
                 size="lg"
               >

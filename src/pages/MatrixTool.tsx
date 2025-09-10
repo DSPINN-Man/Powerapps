@@ -14,11 +14,8 @@ export default function MatrixTool() {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [processing, setProcessing] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  // Simplified UI: only output format matters for download naming; backend is fixed
   const [sheetName, setSheetName] = useState("");
-  const [delimiter, setDelimiter] = useState(",");
-  const [startRow, setStartRow] = useState("1");
-  const [startCol, setStartCol] = useState("A");
-  const [matrixSize, setMatrixSize] = useState("auto");
   const [outputFormat, setOutputFormat] = useState("csv");
 
   const API_BASE_URL = '/api';
@@ -135,96 +132,28 @@ export default function MatrixTool() {
 
               <Separator />
 
-              {/* File Format Settings */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="sheet-name">Sheet Name (Excel only)</Label>
-                  <Input
-                    id="sheet-name"
-                    placeholder="Sheet1"
-                    value={sheetName}
-                    onChange={(e) => setSheetName(e.target.value)}
-                  />
-                </div>
-
-                {/* CSV delimiter selection hidden since CSV uploads are disabled for this tool */}
-              </div>
-
-              <Separator />
-
-              {/* Matrix Configuration */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Matrix Configuration</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="start-row">Start Row</Label>
-                    <Input
-                      id="start-row"
-                      placeholder="1"
-                      value={startRow}
-                      onChange={(e) => setStartRow(e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="start-col">Start Column</Label>
-                    <Input
-                      id="start-col"
-                      placeholder="A"
-                      value={startCol}
-                      onChange={(e) => setStartCol(e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="matrix-size">Matrix Size</Label>
-                    <Select value={matrixSize} onValueChange={setMatrixSize}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="auto">Auto-detect</SelectItem>
-                        <SelectItem value="3x3">3×3</SelectItem>
-                        <SelectItem value="4x4">4×4</SelectItem>
-                        <SelectItem value="5x5">5×5</SelectItem>
-                        <SelectItem value="custom">Custom</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="output-format">Output Format</Label>
-                  <Select value={outputFormat} onValueChange={setOutputFormat}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {outputFormats.map(fmt => (
-                        <SelectItem key={fmt.value} value={fmt.value}>{fmt.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Custom Mapping */}
+              {/* Output format selection (for naming only) */}
               <div>
-                <Label htmlFor="custom-mapping">Custom Column Mapping (Optional)</Label>
-                <Textarea
-                  id="custom-mapping"
-                  placeholder="Enter custom column mappings in JSON format, e.g.:
-{
-  &quot;real_impedance&quot;: &quot;B&quot;,
-  &quot;imaginary_impedance&quot;: &quot;C&quot;,
-  &quot;frequency&quot;: &quot;D&quot;
-}"
-                  className="mt-2 min-h-[100px] font-mono text-sm"
-                />
+                <Label htmlFor="output-format">Output Format</Label>
+                <Select value={outputFormat} onValueChange={setOutputFormat}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="csv">CSV Format</SelectItem>
+                    <SelectItem value="txt">TXT Format</SelectItem>
+                    <SelectItem value="pfx">PowerFactory Format</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+
+              <Separator />
+
+              {/* Removed matrix configuration per requirement */}
+
+              <Separator />
+
+              {/* Removed custom mapping per requirement */}
             </CardContent>
           </Card>
         </div>

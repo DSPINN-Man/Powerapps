@@ -14,8 +14,7 @@ export default function LociTool() {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [processing, setProcessing] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [xColumn, setXColumn] = useState("");
-  const [yColumn, setYColumn] = useState("");
+  // Simplified UI: remove data column selection
   const [orderDirection, setOrderDirection] = useState("clockwise");
   const [outputFormat, setOutputFormat] = useState("xlsx");
   const [includeVisualization, setIncludeVisualization] = useState(true);
@@ -131,39 +130,7 @@ export default function LociTool() {
 
               <Separator />
 
-              {/* Column Selection */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Data Columns</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="x-column">X-Axis Column (Real/Resistance)</Label>
-                    <Select value={xColumn} onValueChange={setXColumn}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select X column" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableColumns.map(col => (
-                          <SelectItem key={col} value={col}>{col.replace('_', ' ').toUpperCase()}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="y-column">Y-Axis Column (Imaginary/Reactance)</Label>
-                    <Select value={yColumn} onValueChange={setYColumn}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Y column" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableColumns.map(col => (
-                          <SelectItem key={col} value={col}>{col.replace('_', ' ').toUpperCase()}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
+              {/* Removed Data Columns per requirement */}
 
               <Separator />
 
@@ -245,7 +212,7 @@ export default function LociTool() {
             <CardContent>
               <Button 
                 onClick={handleProcessing}
-                disabled={uploadedFiles.length === 0 || !xColumn || !yColumn || processing}
+                disabled={uploadedFiles.length === 0 || processing}
                 className="w-full"
                 size="lg"
               >
