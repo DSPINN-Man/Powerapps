@@ -14,12 +14,24 @@ export default function HeatmapTool() {
   const [harmonicFiles, setHarmonicFiles] = useState<File[]>([]);
   const [lociFiles, setLociFiles] = useState<File[]>([]);
   const [processing, setProcessing] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [xColumn, setXColumn] = useState("");
   const [yColumn, setYColumn] = useState("");
   const [metricColumn, setMetricColumn] = useState("");
   const [colormap, setColormap] = useState("viridis");
   const [resolution, setResolution] = useState([300]);
   const [outputFormat, setOutputFormat] = useState("png");
+
+  const API_BASE_URL = '/api';
+
+  const uploadFile = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await fetch(`${API_BASE_URL}/upload`, { method: 'POST', body: formData });
+    if (!response.ok) throw new Error('File upload failed');
+    const data = await response.json();
+    return data.filename as string;
+  };
 
   const colormaps = [
     { value: "viridis", label: "Viridis (Default)" },
@@ -41,10 +53,52 @@ export default function HeatmapTool() {
   const availableColumns = ["frequency", "voltage", "current", "harmonic_order", "thd", "impedance"];
 
   const handleProcessing = async () => {
+    if (harmonicFiles.length === 0 || lociFiles.length === 0) return;
     setProcessing(true);
-    // Simulate processing
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    setProcessing(false);
+    try {
+      const harmonicFilename = await uploadFile(harmonicFiles[0]);
+      const lociFilename = await uploadFile(lociFiles[0]);
+      const response = await fetch(`${API_BASE_URL}/process-heatmap`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          harmonicFile: harmonicFilename,
+          lociFile: lociFilename,
+          xColumn,
+          yColumn,
+          metricColumn,
+          colormap,
+          outputFormat,
+          resolution: resolution[0]
+        })
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.details || 'Heatmap processing failed');
+      }
+      const result = await response.json();
+      setSessionId(result.sessionId);
+    } catch (e) {
+      console.error(e);
+      alert('Processing failed. Please try again.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const downloadResults = async () => {
+    if (!sessionId) return;
+    const response = await fetch(`${API_BASE_URL}/download?sessionId=${sessionId}`);
+    if (!response.ok) return alert('Download failed');
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${sessionId}_results.zip`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
   };
 
   return (
@@ -86,9 +140,9 @@ export default function HeatmapTool() {
             <CardContent className="space-y-6">
               {/* File Upload */}
               <div>
-                <Label className="text-base font-medium mb-3 block">Harmonic Calculation Results (.xlsx/.xlsm/.xls/.csv)</Label>
+                <Label className="text-base font-medium mb-3 block">Harmonic Calculation Results (.xlsx/.xlsm/.xls)</Label>
                 <FileUpload
-                  acceptedTypes={['.xlsx', '.xlsm', '.xls', '.csv']}
+                  acceptedTypes={['.xlsx', '.xlsm', '.xls']}
                   maxSize={50}
                   onFilesSelected={setHarmonicFiles}
                   multiple={false}
@@ -97,9 +151,9 @@ export default function HeatmapTool() {
               </div>
               
               <div>
-                <Label className="text-base font-medium mb-3 block">Impedance Loci Data with Harmonic Limits (.xlsx/.xlsm/.xls/.csv)</Label>
+                <Label className="text-base font-medium mb-3 block">Impedance Loci Data with Harmonic Limits (.xlsx/.xlsm/.xls)</Label>
                 <FileUpload
-                  acceptedTypes={['.xlsx', '.xlsm', '.xls', '.csv']}
+                  acceptedTypes={['.xlsx', '.xlsm', '.xls']}
                   maxSize={50}
                   onFilesSelected={setLociFiles}
                   multiple={false}
@@ -249,13 +303,9 @@ export default function HeatmapTool() {
                 <Eye className="mr-2 h-4 w-4" />
                 Preview Heatmap
               </Button>
-              <Button variant="outline" className="w-full" disabled>
+              <Button variant="outline" className="w-full" onClick={downloadResults} disabled={!sessionId}>
                 <Download className="mr-2 h-4 w-4" />
-                Download Plot
-              </Button>
-              <Button variant="outline" className="w-full" disabled>
-                <Download className="mr-2 h-4 w-4" />
-                PowerFactory CSV
+                Download Results Package
               </Button>
             </CardContent>
           </Card>

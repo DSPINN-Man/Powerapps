@@ -7,9 +7,10 @@ A comprehensive web application for power systems engineers to process impedance
 
 ### **Why We're Building This**
 - **Problem**: Manual processing of impedance loci data and harmonic analysis is time-consuming and error-prone
-- **Solution**: Web-based automation tool that integrates with PowerFactory and provides professional-grade analysis
+- **Solution**: Web-based automation tool which provides professional-grade analysis
 - **Value**: Reduces analysis time from hours to minutes, improves accuracy, generates professional reports
 
+We are building this app to streamline and automate complex data processing tasks related to harmonic analysis, impedance loci visualization, and matrix conversions within our team. Currently, these tasks rely on running Python scripts manually, which requires knowledge of coding and can be time-consuming for teammates who are not familiar with Python or data analysis tools.
 ---
 
 ## 🛠️ Technical Architecture

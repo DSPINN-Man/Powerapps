@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useId } from "react";
 import { Upload, File, X, CheckCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ export function FileUpload({
 }: FileUploadProps) {
   const [dragActive, setDragActive] = useState(false);
   const [internalFiles, setInternalFiles] = useState<File[]>([]);
+  const instanceId = useId();
   
   // Use controlled files if provided, otherwise use internal state
   const uploadedFiles = files || internalFiles;
@@ -124,7 +125,7 @@ export function FileUpload({
             
             <input
               type="file"
-              id="file-upload"
+              id={`file-upload-${instanceId}`}
               className="hidden"
               accept={acceptedTypes.join(',')}
               multiple={multiple}
@@ -132,7 +133,7 @@ export function FileUpload({
             />
             
             <Button asChild variant="outline" className="mb-4">
-              <label htmlFor="file-upload" className="cursor-pointer">
+              <label htmlFor={`file-upload-${instanceId}`} className="cursor-pointer">
                 Browse Files
               </label>
             </Button>

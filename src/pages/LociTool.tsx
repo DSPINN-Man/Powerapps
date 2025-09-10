@@ -13,12 +13,24 @@ import { Switch } from "@/components/ui/switch";
 export default function LociTool() {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [processing, setProcessing] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [xColumn, setXColumn] = useState("");
   const [yColumn, setYColumn] = useState("");
   const [orderDirection, setOrderDirection] = useState("clockwise");
   const [outputFormat, setOutputFormat] = useState("xlsx");
   const [includeVisualization, setIncludeVisualization] = useState(true);
   const [preserveOriginal, setPreserveOriginal] = useState(false);
+
+  const API_BASE_URL = '/api';
+
+  const uploadFile = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await fetch(`${API_BASE_URL}/upload`, { method: 'POST', body: formData });
+    if (!response.ok) throw new Error('File upload failed');
+    const data = await response.json();
+    return data.filename as string;
+  };
 
   // Mock columns (in real app, these would come from file analysis)
   const availableColumns = ["real_impedance", "imaginary_impedance", "resistance", "reactance", "magnitude", "phase"];
@@ -30,10 +42,42 @@ export default function LociTool() {
   ];
 
   const handleProcessing = async () => {
+    if (uploadedFiles.length === 0) return;
     setProcessing(true);
-    // Simulate processing
-    await new Promise(resolve => setTimeout(resolve, 2800));
-    setProcessing(false);
+    try {
+      const lociFilename = await uploadFile(uploadedFiles[0]);
+      const response = await fetch(`${API_BASE_URL}/process-loci`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: lociFilename })
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.details || 'Loci processing failed');
+      }
+      const result = await response.json();
+      setSessionId(result.sessionId);
+    } catch (e) {
+      console.error(e);
+      alert('Processing failed. Please try again.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const downloadResults = async () => {
+    if (!sessionId) return;
+    const response = await fetch(`${API_BASE_URL}/download?sessionId=${sessionId}`);
+    if (!response.ok) return alert('Download failed');
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${sessionId}_results.zip`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
   };
 
   return (
@@ -75,9 +119,9 @@ export default function LociTool() {
             <CardContent className="space-y-6">
               {/* File Upload */}
               <div>
-                <Label className="text-base font-medium mb-3 block">Impedance Loci Data (.xlsx/.xlsm/.xls/.csv)</Label>
+                <Label className="text-base font-medium mb-3 block">Impedance Loci Data (.xlsx/.xlsm/.xls)</Label>
                 <FileUpload
-                  acceptedTypes={['.xlsx', '.xlsm', '.xls', '.csv']}
+                  acceptedTypes={['.xlsx', '.xlsm', '.xls']}
                   maxSize={20}
                   onFilesSelected={setUploadedFiles}
                   multiple={false}
@@ -247,9 +291,9 @@ export default function LociTool() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button variant="outline" className="w-full" disabled>
+              <Button variant="outline" className="w-full" onClick={downloadResults} disabled={!sessionId}>
                 <Download className="mr-2 h-4 w-4" />
-                Reordered Data
+                Download Results Package
               </Button>
               <Button variant="outline" className="w-full" disabled>
                 <Eye className="mr-2 h-4 w-4" />

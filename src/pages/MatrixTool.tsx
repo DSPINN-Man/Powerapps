@@ -13,12 +13,24 @@ import { Textarea } from "@/components/ui/textarea";
 export default function MatrixTool() {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [processing, setProcessing] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [sheetName, setSheetName] = useState("");
   const [delimiter, setDelimiter] = useState(",");
   const [startRow, setStartRow] = useState("1");
   const [startCol, setStartCol] = useState("A");
   const [matrixSize, setMatrixSize] = useState("auto");
   const [outputFormat, setOutputFormat] = useState("csv");
+
+  const API_BASE_URL = '/api';
+
+  const uploadFile = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await fetch(`${API_BASE_URL}/upload`, { method: 'POST', body: formData });
+    if (!response.ok) throw new Error('File upload failed');
+    const data = await response.json();
+    return data.filename as string;
+  };
 
   const delimiterOptions = [
     { value: ",", label: "Comma (,)" },
@@ -34,10 +46,42 @@ export default function MatrixTool() {
   ];
 
   const handleProcessing = async () => {
+    if (uploadedFiles.length === 0) return;
     setProcessing(true);
-    // Simulate processing
-    await new Promise(resolve => setTimeout(resolve, 2500));
-    setProcessing(false);
+    try {
+      const lociFilename = await uploadFile(uploadedFiles[0]);
+      const response = await fetch(`${API_BASE_URL}/process-matrix`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: lociFilename, sheetName: sheetName || 'Impedance Loci Vertices' })
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.details || 'Matrix conversion failed');
+      }
+      const result = await response.json();
+      setSessionId(result.sessionId);
+    } catch (e) {
+      console.error(e);
+      alert('Conversion failed. Please try again.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const downloadResults = async () => {
+    if (!sessionId) return;
+    const response = await fetch(`${API_BASE_URL}/download?sessionId=${sessionId}`);
+    if (!response.ok) return alert('Download failed');
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${sessionId}_results.zip`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
   };
 
   return (
@@ -79,9 +123,9 @@ export default function MatrixTool() {
             <CardContent className="space-y-6">
               {/* File Upload */}
               <div>
-                <Label className="text-base font-medium mb-3 block">Impedance Loci Data (.xlsx/.xlsm/.xls/.csv)</Label>
+                <Label className="text-base font-medium mb-3 block">Impedance Loci Data (.xlsx/.xlsm/.xls)</Label>
                 <FileUpload
-                  acceptedTypes={['.xlsx', '.xlsm', '.xls', '.csv']}
+                  acceptedTypes={['.xlsx', '.xlsm', '.xls']}
                   maxSize={25}
                   onFilesSelected={setUploadedFiles}
                   multiple={false}
@@ -103,19 +147,7 @@ export default function MatrixTool() {
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="delimiter">Delimiter (CSV only)</Label>
-                  <Select value={delimiter} onValueChange={setDelimiter}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {delimiterOptions.map(opt => (
-                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/* CSV delimiter selection hidden since CSV uploads are disabled for this tool */}
               </div>
 
               <Separator />
@@ -256,9 +288,9 @@ export default function MatrixTool() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button variant="outline" className="w-full" disabled>
+              <Button variant="outline" className="w-full" onClick={downloadResults} disabled={!sessionId}>
                 <Download className="mr-2 h-4 w-4" />
-                PowerFactory Matrix
+                Download Results Package
               </Button>
               <Button variant="outline" className="w-full" disabled>
                 <Download className="mr-2 h-4 w-4" />
