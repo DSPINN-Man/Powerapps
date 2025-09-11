@@ -1,8 +1,7 @@
-const multiparty = require('multiparty');
-const multipart = require('aws-lambda-multipart-parser');
 const { promises: fs } = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
+const parseMultipart = require('parse-multipart');
 
 exports.handler = async (event, context) => {
   // Enable CORS
@@ -39,25 +38,21 @@ exports.handler = async (event, context) => {
       };
     }
 
-    const parsed = multipart.parse(event, true); // parse buffers
-    const fileField = parsed.file || parsed.files || parsed.upload || null;
-
-    let fileObj = null;
-    if (Array.isArray(fileField)) {
-      fileObj = fileField[0];
-    } else if (fileField && fileField.content) {
-      fileObj = fileField;
+    // Decode base64 body into buffer
+    const bodyBuffer = event.isBase64Encoded ? Buffer.from(event.body, 'base64') : Buffer.from(event.body || '', 'utf8');
+    // Extract boundary
+    const boundaryMatch = /boundary=([^;]+)/i.exec(contentType);
+    if (!boundaryMatch) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing multipart boundary' }) };
+    }
+    const boundary = boundaryMatch[1];
+    const parts = parseMultipart.Parse(bodyBuffer, boundary);
+    const filePart = parts.find(p => p.filename && p.data);
+    if (!filePart) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'No file uploaded' }) };
     }
 
-    if (!fileObj) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'No file uploaded' })
-      };
-    }
-
-    const originalFilename = fileObj.filename || 'upload.xlsx';
+    const originalFilename = filePart.filename || 'upload.xlsx';
     const fileExt = path.extname(originalFilename).toLowerCase();
     const allowedTypes = ['.xlsx', '.xlsm', '.xls', '.csv'];
     if (!allowedTypes.includes(fileExt)) {
@@ -70,7 +65,7 @@ exports.handler = async (event, context) => {
 
     const uniqueFilename = `${uuidv4()}_${originalFilename.replace(/\s+/g, '_')}`;
     const newPath = path.join(uploadDir, uniqueFilename);
-    await fs.writeFile(newPath, fileObj.content);
+    await fs.writeFile(newPath, filePart.data);
 
     return {
       statusCode: 200,
@@ -80,7 +75,7 @@ exports.handler = async (event, context) => {
         filename: uniqueFilename,
         originalName: originalFilename,
         path: newPath,
-        size: fileObj.content.length
+        size: filePart.data.length
       })
     };
 
