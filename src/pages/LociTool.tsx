@@ -38,14 +38,7 @@ export default function LociTool() {
     return blobName as string;
   };
 
-  const uploadFile = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    const response = await fetch(`${API_BASE_URL}/upload`, { method: 'POST', body: formData });
-    if (!response.ok) throw new Error('File upload failed');
-    const data = await response.json();
-    return data.filename as string;
-  };
+  // Removed legacy API upload function; Azure SAS direct upload is used instead
 
   // Mock columns (in real app, these would come from file analysis)
   const availableColumns = ["real_impedance", "imaginary_impedance", "resistance", "reactance", "magnitude", "phase"];
