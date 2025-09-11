@@ -36,15 +36,6 @@ export default function MatrixTool() {
     return blobName as string;
   };
 
-  const uploadFile = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    const response = await fetch(`${API_BASE_URL}/upload`, { method: 'POST', body: formData });
-    if (!response.ok) throw new Error('File upload failed');
-    const data = await response.json();
-    return data.filename as string;
-  };
-
   const delimiterOptions = [
     { value: ",", label: "Comma (,)" },
     { value: ";", label: "Semicolon (;)" },
