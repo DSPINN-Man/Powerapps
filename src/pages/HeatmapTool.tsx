@@ -22,12 +22,21 @@ export default function HeatmapTool() {
   const API_BASE_URL = '/api';
 
   const uploadFile = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    const response = await fetch(`${API_BASE_URL}/upload`, { method: 'POST', body: formData });
-    if (!response.ok) throw new Error('File upload failed');
-    const data = await response.json();
-    return data.filename as string;
+    // Step 1: request SAS
+    const presign = await fetch(`${API_BASE_URL}/presign?filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type || 'application/octet-stream')}`);
+    if (!presign.ok) throw new Error('Failed to get upload URL');
+    const { uploadUrl, blobName } = await presign.json();
+    // Step 2: PUT directly to Azure Blob
+    const putResp = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: {
+        'x-ms-blob-type': 'BlockBlob',
+        'Content-Type': file.type || 'application/octet-stream'
+      },
+      body: file
+    });
+    if (!putResp.ok) throw new Error('Direct upload failed');
+    return blobName as string;
   };
 
   const outputFormats = [
@@ -38,14 +47,14 @@ export default function HeatmapTool() {
     if (harmonicFiles.length === 0 || lociFiles.length === 0) return;
     setProcessing(true);
     try {
-      const harmonicFilename = await uploadFile(harmonicFiles[0]);
-      const lociFilename = await uploadFile(lociFiles[0]);
+      const harmonicBlob = await uploadFile(harmonicFiles[0]);
+      const lociBlob = await uploadFile(lociFiles[0]);
       const response = await fetch(`${API_BASE_URL}/process-heatmap`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          harmonicFile: harmonicFilename,
-          lociFile: lociFilename,
+          harmonicBlob,
+          lociBlob,
           outputFormat,
           resolution: resolution[0]
         })
@@ -121,7 +130,7 @@ export default function HeatmapTool() {
                 <Label className="text-base font-medium mb-3 block">Harmonic Calculation Results (.xlsx/.xlsm/.xls)</Label>
                 <FileUpload
                   acceptedTypes={['.xlsx', '.xlsm', '.xls']}
-                  maxSize={50}
+                  maxSize={100}
                   onFilesSelected={setHarmonicFiles}
                   multiple={false}
                   files={harmonicFiles}
@@ -132,7 +141,7 @@ export default function HeatmapTool() {
                 <Label className="text-base font-medium mb-3 block">Impedance Loci Data with Harmonic Limits (.xlsx/.xlsm/.xls)</Label>
                 <FileUpload
                   acceptedTypes={['.xlsx', '.xlsm', '.xls']}
-                  maxSize={50}
+                  maxSize={100}
                   onFilesSelected={setLociFiles}
                   multiple={false}
                   files={lociFiles}

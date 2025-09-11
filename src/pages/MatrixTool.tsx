@@ -130,7 +130,7 @@ export default function MatrixTool() {
                 <Label className="text-base font-medium mb-3 block">Impedance Loci Data (.xlsx/.xlsm/.xls)</Label>
                 <FileUpload
                   acceptedTypes={['.xlsx', '.xlsm', '.xls']}
-                  maxSize={25}
+                  maxSize={100}
                   onFilesSelected={setUploadedFiles}
                   multiple={false}
                   files={uploadedFiles}
