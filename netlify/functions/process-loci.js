@@ -2,6 +2,7 @@ const { spawn } = require('child_process');
 const { promises: fs } = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
+const { BlobServiceClient, StorageSharedKeyCredential } = require('@azure/storage-blob');
 
 exports.handler = async (event, context) => {
   const headers = {
@@ -24,13 +25,13 @@ exports.handler = async (event, context) => {
 
   try {
     const body = JSON.parse(event.body || '{}');
-    const { filename, sheetName = 'Impedance Loci Vertices' } = body;
+    const { lociBlob, sheetName = 'Impedance Loci Vertices' } = body;
 
-    if (!filename) {
+    if (!lociBlob) {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ error: 'Filename is required' })
+        body: JSON.stringify({ error: 'lociBlob is required' })
       };
     }
 
@@ -40,9 +41,22 @@ exports.handler = async (event, context) => {
     await fs.mkdir(tempDir, { recursive: true });
     await fs.mkdir(resultsDir, { recursive: true });
 
-    const inputPath = path.join('/tmp', 'uploads', filename);
-    const workingLociFile = path.join(tempDir, 'Loci_Script_Inputs.xlsm');
-    await fs.copyFile(inputPath, workingLociFile);
+    const accountName = process.env.AZURE_STORAGE_ACCOUNT;
+    const accountKey = process.env.AZURE_STORAGE_KEY;
+    const containerName = process.env.AZURE_CONTAINER_NAME || 'uploads';
+    const sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey);
+    const blobServiceClient = new BlobServiceClient(`https://${accountName}.blob.core.windows.net`, sharedKeyCredential);
+    const containerClient = blobServiceClient.getContainerClient(containerName);
+    const lociClient = containerClient.getBlobClient(lociBlob);
+    const lociDownload = await lociClient.download();
+    const inputPath = path.join(tempDir, 'Loci_Script_Inputs.xlsm');
+    await new Promise((resolve, reject) => {
+      const ws = require('fs').createWriteStream(inputPath);
+      lociDownload.readableStreamBody.pipe(ws);
+      ws.on('finish', resolve);
+      ws.on('error', reject);
+    });
+    const workingLociFile = inputPath;
 
     async function getOriginalClockwiseScript() {
       const candidates = [

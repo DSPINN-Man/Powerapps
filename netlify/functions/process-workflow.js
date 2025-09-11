@@ -26,8 +26,8 @@ exports.handler = async (event, context) => {
   try {
     const body = JSON.parse(event.body);
     const { 
-      filename, 
-      harmonicsFile, 
+      lociBlob, 
+      harmonicsBlob, 
       sheetName = 'Impedance Loci Vertices',
       limitsSheetName = 'Harmonic Limits',
       lociUnit = 'Ω',
@@ -35,11 +35,11 @@ exports.handler = async (event, context) => {
       generatePlots = true
     } = body;
 
-    if (!filename || !harmonicsFile) {
+    if (!lociBlob || !harmonicsBlob) {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ error: 'Filename and harmonicsFile are required' })
+        body: JSON.stringify({ error: 'lociBlob and harmonicsBlob are required' })
       };
     }
 
@@ -55,15 +55,22 @@ exports.handler = async (event, context) => {
     
     // Step 1: Prepare files
     steps.push('Preparing files...');
-    const inputPath = path.join('/tmp', 'uploads', filename);
-    const harmonicsPath = path.join('/tmp', 'uploads', harmonicsFile);
-    
-    // Copy files to working directory
+    // Download from Azure
+    const { BlobServiceClient, StorageSharedKeyCredential } = require('@azure/storage-blob');
+    const accountName = process.env.AZURE_STORAGE_ACCOUNT;
+    const accountKey = process.env.AZURE_STORAGE_KEY;
+    const containerName = process.env.AZURE_CONTAINER_NAME || 'uploads';
+    const sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey);
+    const blobServiceClient = new BlobServiceClient(`https://${accountName}.blob.core.windows.net`, sharedKeyCredential);
+    const containerClient = blobServiceClient.getContainerClient(containerName);
+    const lociClient = containerClient.getBlobClient(lociBlob);
+    const harmClient = containerClient.getBlobClient(harmonicsBlob);
     const workingLociFile = path.join(tempDir, 'Loci_Script_Inputs.xlsm');
-    const workingHarmonicsFile = path.join(tempDir, harmonicsFile);
-    
-    await fs.copyFile(inputPath, workingLociFile);
-    await fs.copyFile(harmonicsPath, workingHarmonicsFile);
+    const workingHarmonicsFile = path.join(tempDir, 'harmonics.xlsx');
+    const lociDownload = await lociClient.download();
+    await new Promise((resolve, reject) => { const ws = require('fs').createWriteStream(workingLociFile); lociDownload.readableStreamBody.pipe(ws); ws.on('finish', resolve); ws.on('error', reject); });
+    const harmDownload = await harmClient.download();
+    await new Promise((resolve, reject) => { const ws = require('fs').createWriteStream(workingHarmonicsFile); harmDownload.readableStreamBody.pipe(ws); ws.on('finish', resolve); ws.on('error', reject); });
 
     // Step 2: Process loci clockwise (if enabled) using original script
     if (reorderVertices) {

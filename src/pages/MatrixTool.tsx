@@ -21,6 +21,22 @@ export default function MatrixTool() {
   const API_BASE_URL = '/api';
 
   const uploadFile = async (file: File): Promise<string> => {
+    const presign = await fetch(`${API_BASE_URL}/presign?filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type || 'application/octet-stream')}`);
+    if (!presign.ok) throw new Error('Failed to get upload URL');
+    const { uploadUrl, blobName } = await presign.json();
+    const putResp = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: {
+        'x-ms-blob-type': 'BlockBlob',
+        'Content-Type': file.type || 'application/octet-stream'
+      },
+      body: file
+    });
+    if (!putResp.ok) throw new Error('Direct upload failed');
+    return blobName as string;
+  };
+
+  const uploadFile = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append('file', file);
     const response = await fetch(`${API_BASE_URL}/upload`, { method: 'POST', body: formData });
@@ -46,11 +62,11 @@ export default function MatrixTool() {
     if (uploadedFiles.length === 0) return;
     setProcessing(true);
     try {
-      const lociFilename = await uploadFile(uploadedFiles[0]);
+      const lociBlob = await uploadFile(uploadedFiles[0]);
       const response = await fetch(`${API_BASE_URL}/process-matrix`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: lociFilename, sheetName: sheetName || 'Impedance Loci Vertices' })
+        body: JSON.stringify({ lociBlob, sheetName: sheetName || 'Impedance Loci Vertices' })
       });
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
