@@ -103,20 +103,19 @@ export default function AutomatedWorkflow() {
   };
 
   const uploadFile = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    const response = await fetch(`${API_BASE_URL}/upload`, {
-      method: 'POST',
-      body: formData
+    const presign = await fetch(`${API_BASE_URL}/presign?filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type || 'application/octet-stream')}`);
+    if (!presign.ok) throw new Error('File upload failed');
+    const { uploadUrl, blobName } = await presign.json();
+    const putResp = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: {
+        'x-ms-blob-type': 'BlockBlob',
+        'Content-Type': file.type || 'application/octet-stream'
+      },
+      body: file
     });
-    
-    if (!response.ok) {
-      throw new Error('File upload failed');
-    }
-    
-    const data = await response.json();
-    return data.filename;
+    if (!putResp.ok) throw new Error('File upload failed');
+    return blobName as string;
   };
 
   const fetchResults = async (sessionId: string): Promise<ProcessingResults> => {
@@ -144,8 +143,8 @@ export default function AutomatedWorkflow() {
       updateStepStatus('upload', 'running');
       setProgress(10);
       
-      const lociFilename = await uploadFile(lociFile[0]);
-      const harmonicsFilename = await uploadFile(harmonicsFile[0]);
+      const lociBlob = await uploadFile(lociFile[0]);
+      const harmonicsBlob = await uploadFile(harmonicsFile[0]);
       
       updateStepStatus('upload', 'completed', [
         `Loci file: ${lociFile[0].name}`,
@@ -165,8 +164,8 @@ export default function AutomatedWorkflow() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          filename: lociFilename,
-          harmonicsFile: harmonicsFilename,
+          lociBlob,
+          harmonicsBlob,
           sheetName,
           limitsSheetName,
           lociUnit,
